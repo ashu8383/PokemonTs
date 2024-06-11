@@ -12,18 +12,22 @@ const first_12_pokemon = async (req: Request, res: Response) => {
     const q: string | undefined = req.body.q as string | undefined;
 
     let nextLink: string | null = null;
-    let data: typeof pokemontData = [];
+    let data: any;
     let total = 0;
 
     if (q) {
-      const filteredData = pokemontData.filter((d: any) =>
+      let tempData = pokemontData.filter((d: any) =>
         d.name.english.toLowerCase().includes(q.toLowerCase())
       );
 
-      data = filteredData;
-      res.json({
-        data,
-      });
+      data = tempData.slice((page - 1) * per_page, page * per_page);
+      total = tempData.length;
+
+      if (total > page * per_page) {
+        nextLink = `http://${req.hostname}:${
+          process.env.PORT || 8282
+        }/api/v1/pokemon/first_twelve_pokemon?page=${page + 1}&q=${q}`;
+      }
     } else {
       total = pokemontData.length;
       data = pokemontData.slice((page - 1) * per_page, page * per_page);
@@ -35,13 +39,13 @@ const first_12_pokemon = async (req: Request, res: Response) => {
           page + 1
         }&per_page=${per_page}`;
       }
-
-      res.json({
-        total,
-        data,
-        next: nextLink,
-      });
     }
+
+    res.json({
+      total,
+      data,
+      next: nextLink,
+    });
   } catch (error) {
     res.status(500).json(error);
   }
